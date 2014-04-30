@@ -63,11 +63,11 @@ class IOQueue
             Node(T&& t): item(std::move(t)), next(0){};
             Node* get_next()
             {
-                return next.load(std::memory_order_seq_cst);
+                return next.load(std::memory_order_relaxed);
             }
             void set_next(Node* node)
             {
-                next.store(node, std::memory_order_seq_cst);
+                next.store(node, std::memory_order_relaxed);
             }
             T item;
             std::atomic<Node*> next;
@@ -93,7 +93,7 @@ class IOQueue
         =====================================================================*/
         operator bool() const
         {
-            return head.load(std::memory_order_seq_cst) != 0;
+            return head.load(std::memory_order_relaxed) != 0;
         }
         
         /*
@@ -108,7 +108,7 @@ class IOQueue
         =====================================================================*/
         T& front()
         {
-            return head.load(std::memory_order_seq_cst)->item;
+            return head.load(std::memory_order_relaxed)->item;
         }
         
         /*
@@ -126,19 +126,19 @@ class IOQueue
         =====================================================================*/
         void pop()
         {
-            auto popped = head.load(std::memory_order_seq_cst);
+            auto popped = head.load(std::memory_order_relaxed);
             auto compare = popped;
             if (tail.compare_exchange_strong(
                     compare,
                     0,
-                    std::memory_order_seq_cst
+                    std::memory_order_relaxed
             ))
             {
                 compare = popped;
                 head.compare_exchange_strong(
                     compare,
                     0,
-                    std::memory_order_seq_cst
+                    std::memory_order_relaxed
                 );
             }
             else
@@ -148,7 +148,7 @@ class IOQueue
                 {
                     new_head = popped->get_next();
                 }
-                head.store(new_head, std::memory_order_seq_cst); 
+                head.store(new_head, std::memory_order_relaxed); 
             }
             delete popped;
         }
@@ -180,7 +180,7 @@ class IOQueue
         unsigned int size() const
         {
             unsigned int count = 0;
-            auto node = head.load(std::memory_order_seq_cst);
+            auto node = head.load(std::memory_order_relaxed);
             while(node)
             {
                 ++count;
@@ -213,14 +213,14 @@ class IOQueue
         =====================================================================*/
         void push(Node* node)
         {
-            auto old_tail = tail.exchange(node, std::memory_order_seq_cst);
+            auto old_tail = tail.exchange(node, std::memory_order_relaxed);
             if (old_tail)
             {
                 old_tail->set_next(node);
             }
             else
             {  
-                head.store(node, std::memory_order_seq_cst);
+                head.store(node, std::memory_order_relaxed);
             }
         }
 };
