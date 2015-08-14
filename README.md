@@ -62,6 +62,13 @@ if (io_queue_has_front(&my_queue) == IO_QUEUE_RESULT_TRUE)
 }
 ```
 
+Always make sure the queue is empty before letting it fall out of scope or
+freeing it, otherwise you'll leak memory. The io_queue_clear function is a
+convenient way to nuke the queue.
+```c
+io_queue_clear(&my_queue);
+```
+
 
 Test
 -----
